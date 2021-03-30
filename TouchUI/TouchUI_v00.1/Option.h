@@ -1,3 +1,7 @@
+
+#ifndef Option_h
+#define Option_h
+
 extern Adafruit_ILI9341 tft;
 class Option
 {
@@ -35,3 +39,5 @@ class Option
       tft.print(value);
     }
 };
+
+#endif

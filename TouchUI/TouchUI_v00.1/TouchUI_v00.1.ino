@@ -66,18 +66,18 @@ Option options[] = {
 
 //später 11 = 5 Options + 2 Page-Tasten + 3 Tabs + 1 Back
 Hitbox hitboxes[5] = {
-  Hitbox(0, 0, 0, 0, ""),
-  Hitbox(0, 0, 0, 0, ""),
-  Hitbox(0, 0, 0, 0, ""),
-  Hitbox(0, 0, 0, 0, ""),
-  Hitbox(0, 0, 0, 0, "")
+  Hitbox(0, 0, 0, 0, "", options[0]),
+  Hitbox(0, 0, 0, 0, "", options[1]),
+  Hitbox(0, 0, 0, 0, "", options[3]),
+  Hitbox(0, 0, 0, 0, "", options[4]),
+  Hitbox(0, 0, 0, 0, "", options[5])
 };
 
 
 
 void setup() {
   for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
-    hitboxes[i] = Hitbox(options[i].x, options[i].y, options[i].w, options[i].h, options[i].desc);
+    hitboxes[i] = Hitbox(options[i].x, options[i].y, options[i].w, options[i].h, options[i].desc, options[i]);
   }
 
   Serial.begin(9600);

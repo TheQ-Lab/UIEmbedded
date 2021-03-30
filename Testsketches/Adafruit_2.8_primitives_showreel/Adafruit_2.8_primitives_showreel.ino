@@ -53,7 +53,8 @@ void setup() {
   tft.setRotation(1);
   tft.fillScreen(ILI9341_BLACK);
 
-  Button8();
+  Button9();
+  Value1();
 }
 
 void loop() {
@@ -79,6 +80,8 @@ void loop() {
     Button7();
   else if (cmd == "b8")
     Button8();
+  else if (cmd == "b9")
+    Button9();
   else if (cmd == "bs1")
     ButtonS1();
   else if (cmd == "bs2")
@@ -91,21 +94,100 @@ void loop() {
     ButtonS5();
   else if (cmd == "bs6")
     ButtonS6();
+  else if (cmd == "bss1")
+    ButtonSS1();
+  else if (cmd == "v1")
+    Value1();
+  else if (cmd == "v2")
+    Value2();
   else if (cmd == "clr")
     tft.fillScreen(ILI9341_BLACK);
-  else if (cmd == "dither") {
-    bool draw = true;
-    for (short x=0; x < 320; x++) {
-      for (short y=0; y < 240; y++) {
-        if (draw)
-          tft.drawPixel(x, y, COL_BG);
-        draw = !draw;
-      }
-      //to make it uneaven every time, from line vert. to dotted
-      //draw = !draw;
-    }
-  }
+  else if (cmd == "dither")
+    dither();
+  else if (cmd == "ditherVert")
+    ditherVert();
+}
 
+void Value1() {
+  byte n = 2;
+  dither();
+  int         cx = 205,
+              cy = 101,
+              w = 80,
+              h = 38,
+              d = 10,
+              m = 17;
+  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
+  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+  
+  for (int i=0; i<n; i++) {
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+    tft.setCursor(cx + 15, cy + 26);
+    if(i==0)
+      tft.println("ON");
+    else if (i==1)
+      tft.println("OFF");
+    cy+=h+d;
+  }
+}
+
+void Value2() {
+  byte n = 3;
+  dither();
+  int         cx = 205,
+              cy = 75,
+              w = 80,
+              h = 38,
+              d = 10,
+              m = 17;
+  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
+  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+  
+  for (int i=0; i<n; i++) {
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+    tft.setCursor(cx + 15, cy + 26);
+    if(i==0)
+      tft.println("Lo");
+    else if (i==1)
+      tft.println("Mid");
+    else if (i==2)
+      tft.println("Hi");
+    cy+=h+d;
+  }
+}
+
+void dither() {
+  bool draw = true;
+  for (short x=0; x < 320; x++) {
+    for (short y=0; y < 240; y++) {
+      if (draw)
+        tft.drawPixel(x, y, COL_BG);
+      draw = !draw;
+    }
+    //to make it uneaven every time, from line vert. to dotted
+    draw = !draw;
+  }
+}
+
+void ditherVert() {
+  bool draw = true;
+  for (short x=0; x < 320; x++) {
+    for (short y=0; y < 240; y++) {
+      if (draw)
+        tft.drawPixel(x, y, COL_BG);
+      draw = !draw;
+    }
+    //to make it uneaven every time, from line vert. to dotted
+    //draw = !draw;
+  }
 }
 
 void Button1() {
@@ -502,7 +584,105 @@ void Button8() {
   }
 }
 
+void Button9() {
+  tft.fillScreen(ILI9341_BLACK);
+  int         cx = 50,
+              cy = 5,
+              w = 220,
+              h = 38;
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT ALWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+  for (int i = 0; i < 5; i++) {
+    if (i == 0) {
+      //tft.drawRoundRect(cx, cy, w+45, h, 4, COL_BG);
+      tft.drawLine(cx, cy+h, cx+w+45, cy+h, COL_BG);
+      tft.setCursor(cx + 10, cy + 26);
+      tft.println("Toller Titel");
+      cy += h + 10;
+      continue;
+    }
+
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+
+    tft.setCursor(cx + 10, cy + 26);
+    if (i == 0)
+      tft.println("AF-Lock");
+    else if (i == 1)
+      tft.println("Cool Feature");
+    else if (i == 2)
+      tft.println("L-Sensitivity");
+    else if (i == 3)
+      tft.println("Mag-Sensitivity");
+    else if (i == 4)
+      tft.println("Auto pwr-off");
+
+    tft.setCursor(cx + w - 10 - (20 * 2), cy + 26);
+    if (i == 0)
+      tft.print("ON");
+    else if (i == 1)
+      tft.print("ON");
+    else if (i == 2)
+      tft.print("1");
+    else if (i == 3)
+      tft.print("3");
+    else if (i == 4)
+      tft.print("OFF");
+
+    cy += h + 10;
+  }
+  
+  //nav right Page
+                cx = cx + w + 10,
+                cy = 70,
+                w = 35,
+                h = 35;
+  tft.drawRoundRect(cx, cy, w, h, 4, COL_BG);
+  tft.drawRoundRect(cx, cy+50+60, w, h, 4, COL_BG);
+  tft.setCursor(cx+10, cy+70-1);
+  tft.print("1");
+  cy += 5;
+  tft.drawLine(cx+w-10-17, cy+70+15, cx+w-17, cy+70+5, COL_TXT);
+  tft.setFont(&NotoSans_Regular6pt7b);
+  tft.setCursor(cx+14, cy+70+20);
+  tft.print("10");
+  tft.setFont(&NotoSans_Regular11pt7b); //reset font
+  
+  //Tab-Bar
+                cx = 0,
+                cy = 35,
+                w = 40,
+                h = 35;
+  for (int i = 0; i < 4; i++) {
+    if (i == 0)
+      tft.fillRoundRect(cx, cy, w, h, 4, COL_YELLOW);
+    else if (i == 1)
+      tft.fillRoundRect(cx, cy, w, h, 4, COL_RED);
+    else if (i == 2)
+      tft.fillRoundRect(cx, cy, w, h, 4, COL_GREEN);
+    else if (i == 3)
+      tft.fillRoundRect(cx, cy, w, h, 4, COL_BLUE);
+    cy += h + 10;
+  }
+}
+
 //------------------------------------------------------------------------------------------------
+
+void ButtonSS1() {
+  tft.fillScreen(ILI9341_BLACK);
+  int         cx = 205,
+              cy = 101,
+              w = 80,
+              h = 38;
+  tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+
+  tft.setCursor(cx + 15, cy + 26);
+  tft.println("OFF");
+}
 
 void ButtonS1() {
   tft.fillScreen(ILI9341_BLACK);
@@ -604,6 +784,7 @@ void ButtonS6() {
   tft.fillCircle(260, 120, 15, COL_YELLOW);
   tft.fillTriangle(260, 120 - 13, 260 - 10, 120 + 8, 260 + 10, 120 + 8, COL_RED);
 }
+
 
 
 void StandardFont() {
