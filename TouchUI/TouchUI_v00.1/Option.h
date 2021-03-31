@@ -26,6 +26,9 @@ class Option
         cy += h + 10;
       }
     }
+    Option() {
+      
+    }
 
     void draw() {
       tft.fillRoundRect(x, y, w, h, 4, COL_BG);

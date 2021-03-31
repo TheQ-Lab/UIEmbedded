@@ -61,23 +61,15 @@ Option options[] = {
   Option(4, "Auto pwr-off", "OFF")
 };
 
-//Hitbox hitboxes[5]; //DOES NOT WORK FOR SOME FUCKED REASON
-//int lololo[15]; //WORKS
 
 //später 11 = 5 Options + 2 Page-Tasten + 3 Tabs + 1 Back
-Hitbox hitboxes[5] = {
-  Hitbox(0, 0, 0, 0, "", options[0]),
-  Hitbox(0, 0, 0, 0, "", options[1]),
-  Hitbox(0, 0, 0, 0, "", options[3]),
-  Hitbox(0, 0, 0, 0, "", options[4]),
-  Hitbox(0, 0, 0, 0, "", options[5])
-};
+Hitbox hitboxes[5]; //NEEDED a second empty constructor...
 
 
 
 void setup() {
   for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
-    hitboxes[i] = Hitbox(options[i].x, options[i].y, options[i].w, options[i].h, options[i].desc, options[i]);
+    hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
   }
 
   Serial.begin(9600);

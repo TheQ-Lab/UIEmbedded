@@ -7,23 +7,25 @@ class Hitbox
 {
   public:
     int x, y, w, h;
-    String desc;
     Option *reference;// = new Option(0,"ll","ll");
-    Hitbox(int _x, int _y, int _w, int _h, String _desc, Option *_reference) {
+    Hitbox(int _x, int _y, int _w, int _h, Option *_reference) {
       x = _x;
       y = _y;
       w = _w;
       h = _h;
-      desc = _desc;
       reference = _reference;
     }
-    /*
-    void addOption(Option& o) {
-      reference = o;
-    }*/
+    Hitbox() {
+      x = 0;
+      y = 0;
+      w = 0;
+      h = 0;
+      //reference = _reference;
+    }
 
     void trigger() {
-      Serial.println(desc);
+      //Option o = *reference; Works actually!
+      Serial.println((*reference).desc + " -> " + (*reference).value);
     }
 };
 
