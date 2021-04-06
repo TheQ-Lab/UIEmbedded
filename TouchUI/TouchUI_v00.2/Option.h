@@ -2,19 +2,21 @@
 #ifndef Option_h
 #define Option_h
 
-extern Adafruit_ILI9341 tft;
+#include "Hitbox.h"
+//extern Adafruit_ILI9341 tft;
+extern void popupValues2(String,String), popupValues3(String,String,String);
+extern void fillHitboxesOptions();
+extern void Button9();
+extern Hitbox hitboxes[];
 class Option : public MenuPt
 {
-  typedef void (*callback_t)();
   public:
     short nTab, nPage, nOption;
     int x, y, w, h;
-    String desc, value;
-    byte setVal;
+    String desc;
+    byte setVal, nValues;
     String values[3];
-    callback_t callback;
-    Option(short pos, String _desc, byte _setVal, String *_values, callback_t _callback)
-    : callback(_callback){
+    Option(short pos, String _desc, byte _setVal, String *_values) {
       desc = _desc;
       //value = _value;
       setVal = _setVal;
@@ -22,6 +24,10 @@ class Option : public MenuPt
       for (unsigned int i = 0; i < sizeof(values)/sizeof(String); i++) {
         values[i] = _values[i];
       }
+      if(values[2] == "")
+        nValues = 2;
+      else
+        nValues = 3;
       /*int     cx = 60,
               cy = 5;
       w = 250;
@@ -57,13 +63,21 @@ class Option : public MenuPt
     }
 
     void onClick() {
-      Serial.println(desc + " -> " + value + " - " + values[0] + " - " + values[1] + " - " + values[2]);
-      //popupValues2();
-      callback();
+      Serial.println(desc + " -> " + values[setVal-1] + " : " + values[0] + " - " + values[1] + " - " + values[2]);
+      if(nValues == 2)
+        popupValues2(values[0], values[1]);
+      else
+        popupValues3(values[0], values[1], values[2]);
+      for(int i = 0; i<nValues; i++) {
+        hitboxes[i].setReference(this);
+        hitboxes[i].setCallbackValue(i+1);
+      }
     }
 
-    void assignPopup()
-      {
+    void onClick(byte callbackVal) {
+      setVal = callbackVal;
+      fillHitboxesOptions();
+      Button9();
     }
 };
 

@@ -8,6 +8,7 @@ class MenuPt
     int x,y,w,h;
     virtual void draw();
     virtual void onClick();
+    virtual void onClick(byte);
 };
 
 #endif

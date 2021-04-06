@@ -33,6 +33,8 @@
 #define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
+#define MAXTOUCHLOCK 15
+
 // This is Preset colors in 16-Bit Hex values (not standard 24-Bit)
 #define COL_BG      0x5248
 #define COL_TXT     0xFFFF
@@ -55,54 +57,28 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #include "Option.h"
 #include "Hitbox.h"
 
-void popupValues2() {
-  byte n = 2;
-  //dither();
-  int         cx = 205,
-              cy = 101,
-              w = 80,
-              h = 38,
-              d = 10,
-              m = 17;
-  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
-  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
-
-  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
-  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
-  tft.setFont(&NotoSans_Regular11pt7b);
-  
-  for (int i=0; i<n; i++) {
-    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
-    tft.setCursor(cx + 15, cy + 26);
-    if(i==0)
-      tft.println("ON");
-    else if (i==1)
-      tft.println("OFF");
-    cy+=h+d;
-  }
-}
-
+byte touchLock;
 uint16_t lastX, lastY;
 String valuesBool[] = { "ON", "OFF" }; String valuesIntensity[] = { "1", "2", "3" };
 Option options[] = {
-  Option(0, "AF-Lock", 1, valuesBool, popupValues2),
-  Option(1, "Cool Feature", 1, valuesBool, popupValues2),
-  Option(2, "L-Sensitivity", 1, valuesIntensity, popupValues2),
-  Option(3, "Mag-Sensitivity", 3, valuesIntensity, popupValues2)/*,
+  Option(0, "AF-Lock", 1, valuesBool),
+  Option(1, "Cool Feature", 1, valuesBool),
+  Option(2, "L-Sensitivity", 1, valuesIntensity),
+  Option(3, "Mag-Sensitivity", 3, valuesIntensity)/*,
   Option(4, "Auto pwr-off", "OFF")*/
 };
 
 
 //später 11 = 5 Options + 2 Page-Tasten + 3 Tabs + 1 Back
-Hitbox hitboxes[5]; //NEEDED a second empty constructor...
+Hitbox hitboxes[4]; //NEEDED a second empty constructor...
 
 
 
 void setup() {
-  for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
+  /*for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
     hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
-    //options.assignPopup(popupValues2);
-  }
+  }*/
+  fillHitboxesOptions();
 
   Serial.begin(9600);
   delay(1000);
@@ -135,30 +111,38 @@ void loop() {
 
   // Retrieve a point
   TSPoint p = ts.getPoint();
-  if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
-    Serial.print("X: "); Serial.print(p.x);
-    Serial.print(", Y: "); Serial.print(p.y);
-    Serial.print(", Z: "); Serial.print(p.z);
-
-    uint16_t nY = map(p.x, TS_MINX, TS_MAXX, tft.height(), 0);
-    uint16_t nX = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
-    p.x = nX;
-    p.y = nY;
-
-    Serial.print("X: "); Serial.print(p.x);
-    Serial.print(", Y: "); Serial.print(p.y);
-    Serial.print(", Z: "); Serial.println(p.z);
-    //Only erasing last cross from Background by re-pasinting it with BG-Color
-    tft.drawLine(lastX - 20, lastY, lastX + 20, lastY, ILI9341_BLACK);
-    tft.drawLine(lastX, lastY - 20, lastX, lastY + 20, ILI9341_BLACK);
-
-    Button9();
-    tft.drawLine(p.x - 20, p.y, p.x + 20, p.y, COL_GREEN);
-    tft.drawLine(p.x, p.y - 20, p.x, p.y + 20, COL_GREEN);
-
-    processTouch(p, hitboxes, sizeof(hitboxes) / sizeof(Hitbox));
-
-    lastX = nX; lastY = nY;
+  if (touchLock == 0) {
+    if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
+      //Serial.print("X: "); Serial.print(p.x);
+      //Serial.print(", Y: "); Serial.print(p.y);
+      //Serial.print(", Z: "); Serial.print(p.z);
+  
+      uint16_t nY = map(p.x, TS_MINX, TS_MAXX, tft.height(), 0);
+      uint16_t nX = map(p.y, TS_MINY, TS_MAXY, 0, tft.width());
+      p.x = nX;
+      p.y = nY;
+  
+      //Serial.print("X: "); Serial.print(p.x);
+      //Serial.print(", Y: "); Serial.print(p.y);
+      //Serial.print(", Z: "); Serial.println(p.z);
+      //Only erasing last cross from Background by re-pasinting it with BG-Color
+      tft.drawLine(lastX - 20, lastY, lastX + 20, lastY, ILI9341_BLACK);
+      tft.drawLine(lastX, lastY - 20, lastX, lastY + 20, ILI9341_BLACK);
+  
+      //Button9();
+      tft.drawLine(p.x - 20, p.y, p.x + 20, p.y, COL_GREEN);
+      tft.drawLine(p.x, p.y - 20, p.x, p.y + 20, COL_GREEN);
+  
+      processTouch(p, hitboxes, sizeof(hitboxes) / sizeof(Hitbox));
+  
+      lastX = nX; lastY = nY;
+      touchLock = MAXTOUCHLOCK;
+    }
+  } else if (touchLock > 0) {
+    if (p.z <= MINPRESSURE) 
+      touchLock--;
+    else
+      touchLock = MAXTOUCHLOCK;
   }
 
   if (cmd == "cfont")
@@ -174,10 +158,81 @@ void loop() {
 
 }
 
+void fillHitboxesOptions() {
+  for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
+    hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
+  }
+}
 
+void fillHitboxesNull() {
+  for (uint8_t i = 0; i < sizeof(hitboxes) / sizeof(Hitbox); i++) {
+    hitboxes[i] = Hitbox();
+  }
+}
+
+void popupValues2(String val1, String val2) {
+  byte n = 2;
+  //dither();
+  int         cx = 205,
+              cy = 101,
+              w = 80,
+              h = 38,
+              d = 10,
+              m = 17;
+  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
+  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+
+
+  fillHitboxesNull();
+  for (int i=0; i<n; i++) {
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+    tft.setCursor(cx + 15, cy + 26);
+    if(i==0)
+      tft.println(val1);
+    else if (i==1)
+      tft.println(val2);
+    hitboxes[i].setPosition(cx, cy, w, h);
+    cy+=h+d;
+  }
+}
+
+void popupValues3(String val1, String val2, String val3) {
+  byte n = 3;
+  //dither();
+  int         cx = 205,
+              cy = 75,
+              w = 80,
+              h = 38,
+              d = 10,
+              m = 17;
+  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
+  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+
+  fillHitboxesNull();
+  for (int i=0; i<n; i++) {
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+    tft.setCursor(cx + 15, cy + 26);
+    if(i==0)
+      tft.println(val1);
+    else if (i==1)
+      tft.println(val2);
+    else if (i==2)
+      tft.println(val3);
+    hitboxes[i].setPosition(cx, cy, w, h);
+    cy+=h+d;
+  }
+}
 
 void Button9() {
-  //tft.fillScreen(ILI9341_BLACK);
+  tft.fillScreen(ILI9341_BLACK);
   int         cx = 50,
               cy = 5,
               w = 220,
