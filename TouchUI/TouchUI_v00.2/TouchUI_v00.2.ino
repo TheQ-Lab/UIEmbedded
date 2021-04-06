@@ -55,12 +55,40 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #include "Option.h"
 #include "Hitbox.h"
 
+void popupValues2() {
+  byte n = 2;
+  //dither();
+  int         cx = 205,
+              cy = 101,
+              w = 80,
+              h = 38,
+              d = 10,
+              m = 17;
+  tft.fillRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,ILI9341_BLACK);
+  tft.drawRoundRect(cx-m,cy-m,2*m+w,2*m+n*h+(n-1)*d,9,COL_BG);
+
+  tft.setTextColor(COL_TXT);  tft.setTextSize(1);
+  //SET FONT LAWAYS BEFORE CURSOR, else y shift down
+  tft.setFont(&NotoSans_Regular11pt7b);
+  
+  for (int i=0; i<n; i++) {
+    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
+    tft.setCursor(cx + 15, cy + 26);
+    if(i==0)
+      tft.println("ON");
+    else if (i==1)
+      tft.println("OFF");
+    cy+=h+d;
+  }
+}
+
 uint16_t lastX, lastY;
+String valuesBool[] = { "ON", "OFF" }; String valuesIntensity[] = { "1", "2", "3" };
 Option options[] = {
-  Option(0, "AF-Lock", "ON"),
-  Option(1, "Cool Feature", "ON"),
-  Option(2, "L-Sensitivity", "1"),
-  Option(3, "Mag-Sensitivity", "3")/*,
+  Option(0, "AF-Lock", 1, valuesBool, popupValues2),
+  Option(1, "Cool Feature", 1, valuesBool, popupValues2),
+  Option(2, "L-Sensitivity", 1, valuesIntensity, popupValues2),
+  Option(3, "Mag-Sensitivity", 3, valuesIntensity, popupValues2)/*,
   Option(4, "Auto pwr-off", "OFF")*/
 };
 
@@ -73,6 +101,7 @@ Hitbox hitboxes[5]; //NEEDED a second empty constructor...
 void setup() {
   for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
     hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
+    //options.assignPopup(popupValues2);
   }
 
   Serial.begin(9600);
@@ -147,7 +176,6 @@ void loop() {
 
 
 
-
 void Button9() {
   //tft.fillScreen(ILI9341_BLACK);
   int         cx = 50,
@@ -157,14 +185,14 @@ void Button9() {
   tft.setTextColor(COL_TXT);  tft.setTextSize(1);
   //SET FONT ALWAYS BEFORE CURSOR, else y shift down
   tft.setFont(&NotoSans_Regular11pt7b);
-  tft.drawLine(cx, cy+h, cx+w+45, cy+h, COL_BG);
+  tft.drawLine(cx, cy + h, cx + w + 45, cy + h, COL_BG);
   tft.setCursor(cx + 10, cy + 26);
   tft.println("Toller Titel");
   /*
-  for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 5; i++) {
     if (i == 0) {
       //tft.drawRoundRect(cx, cy, w+45, h, 4, COL_BG);
-      
+
       cy += h + 10;
       continue;
     }
@@ -196,33 +224,33 @@ void Button9() {
       tft.print("OFF");
 
     cy += h + 10;
-  }
+    }
   */
   for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
     options[i].draw();
   }
-  
+
   //nav right Page
-                cx = cx + w + 10,
-                cy = 70,
-                w = 35,
-                h = 35;
+  cx = cx + w + 10,
+  cy = 70,
+  w = 35,
+  h = 35;
   tft.drawRoundRect(cx, cy, w, h, 4, COL_BG);
-  tft.drawRoundRect(cx, cy+50+60, w, h, 4, COL_BG);
-  tft.setCursor(cx+10, cy+70-1);
+  tft.drawRoundRect(cx, cy + 50 + 60, w, h, 4, COL_BG);
+  tft.setCursor(cx + 10, cy + 70 - 1);
   tft.print("1");
   cy += 5;
-  tft.drawLine(cx+w-10-17, cy+70+15, cx+w-17, cy+70+5, COL_TXT);
+  tft.drawLine(cx + w - 10 - 17, cy + 70 + 15, cx + w - 17, cy + 70 + 5, COL_TXT);
   tft.setFont(&NotoSans_Regular6pt7b);
-  tft.setCursor(cx+14, cy+70+20);
+  tft.setCursor(cx + 14, cy + 70 + 20);
   tft.print("10");
   tft.setFont(&NotoSans_Regular11pt7b); //reset font
-  
+
   //Tab-Bar
-                cx = 0,
-                cy = 35,
-                w = 40,
-                h = 35;
+  cx = 0,
+  cy = 35,
+  w = 40,
+  h = 35;
   for (int i = 0; i < 4; i++) {
     if (i == 0)
       tft.fillRoundRect(cx, cy, w, h, 4, COL_YELLOW);
@@ -236,18 +264,7 @@ void Button9() {
   }
 }
 
-/*
-  void processTouch(TSPoint p) {
-  bool isHit = true;
-  Serial.println(sizeof(hitboxes)/sizeof(Hitbox));
-  for (uint8_t i=0; i<sizeof(hitboxes)/sizeof(Hitbox); i++) {
-    isHit = touchCheckCollision(hitboxes[i], p.x, p.y);
-    if (isHit) {
-      hitboxes[i].trigger();
-      break;
-    }
-  }
-  }*/
+// ----Touch----
 
 // passing array.length on does not work, due to it having to be a pointer
 void processTouch(TSPoint p, Hitbox *h, byte hSize) {
@@ -278,6 +295,8 @@ bool touchCheckCollision(Hitbox h, int tx, int ty) {
   }
   return false;
   }*/
+
+// ----Tft-Screen----
 
 void ButtonS5() {
   //tft.fillScreen(ILI9341_BLACK);
