@@ -54,7 +54,7 @@ void setup() {
   tft.fillScreen(ILI9341_BLACK);
 
   Button9();
-  Value1();
+  //Value1();
 }
 
 void loop() {

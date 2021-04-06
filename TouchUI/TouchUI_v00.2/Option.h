@@ -3,7 +3,7 @@
 #define Option_h
 
 extern Adafruit_ILI9341 tft;
-class Option
+class Option : public MenuPt
 {
   public:
     short nTab, nPage, nOption;
@@ -12,10 +12,15 @@ class Option
     Option(short pos, String _desc, String _value) {
       desc = _desc;
       value = _value;
-      int     cx = 60,
+      /*int     cx = 60,
               cy = 5;
       w = 250;
-      h = 38;
+      h = 38;*/
+      int     cx = 50,
+              cy = 5;
+              w = 220;
+              h = 38;
+      cy += h + 10;
       for (int i = 0; i < 5; i++) {
         if (i == pos) {
           x = cx;
@@ -26,9 +31,8 @@ class Option
         cy += h + 10;
       }
     }
-    Option() {
-      
-    }
+    
+    Option() {}
 
     void draw() {
       tft.fillRoundRect(x, y, w, h, 4, COL_BG);
@@ -40,6 +44,10 @@ class Option
       tft.println(desc);
       tft.setCursor(x + w - 10 - (20 * 2), y + 26);
       tft.print(value);
+    }
+
+    void onClick() {
+      Serial.println(desc + " -> " + value);
     }
 };
 

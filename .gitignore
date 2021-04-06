@@ -1,10 +1,2 @@
-*
 
-!.gitignore
-!.gitattributes
-!README.MD
-
-!*/libraries
-!*/Testsketches
-!*/TouchUI
-
+Projekt2/**
