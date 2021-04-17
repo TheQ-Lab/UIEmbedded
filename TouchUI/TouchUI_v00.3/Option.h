@@ -3,10 +3,8 @@
 #define Option_h
 
 #include "Hitbox.h"
-//extern Adafruit_ILI9341 tft;
 extern void popupValues2(String,String), popupValues3(String,String,String);
-extern void fillHitboxesOptions();
-extern void Button9();
+extern void drawMenu();
 extern Hitbox hitboxes[];
 class Option : public MenuPt
 {
@@ -76,8 +74,7 @@ class Option : public MenuPt
 
     void onClick(byte callbackVal) {
       setVal = callbackVal;
-      fillHitboxesOptions();
-      Button9();
+      drawMenu();
     }
 };
 

@@ -3,6 +3,8 @@
 #define Hitbox_h
 
 #include "Option.h"
+extern void drawMenu();
+extern void turnPage(bool);
 class Hitbox
 {
   public:
@@ -47,7 +49,15 @@ class Hitbox
     void trigger() {
       //Option o = *reference; Works actually!
       //Serial.println((*reference).desc + " -> " + (*reference).value);
-      if (cbVal == 0)
+      if (cbVal == 100) {
+        //is BackButton
+        drawMenu();
+      } else if (cbVal == 101) {
+        turnPage(false);
+      } else if (cbVal == 102) {
+        turnPage(true);
+      }
+      else if (cbVal == 0)
         (*reference).onClick();
       else
         (*reference).onClick(cbVal);

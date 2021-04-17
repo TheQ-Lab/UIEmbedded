@@ -47,6 +47,8 @@
 #define COL_GREEN   0x7EC4
 #define COL_BLUE    0x2B1D
 
+#define N_OPTIONS_PER_PAGE 4
+
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
@@ -68,18 +70,22 @@ Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 
 byte touchLock;
 uint16_t lastX, lastY;
+byte currentPage = 1, currentTab = 1;
 String valuesBool[] = { "ON", "OFF" }; String valuesIntensity[] = { "1", "2", "3" };
 Option options[] = {
   Option(0, "AF-Lock", 1, valuesBool),
   Option(1, "Cool Feature", 1, valuesBool),
   Option(2, "L-Sensitivity", 1, valuesIntensity),
-  Option(3, "Mag-Sensitivity", 3, valuesIntensity)/*,
-  Option(4, "Auto pwr-off", "OFF")*/
+  Option(3, "Mag-Sensitvt.", 3, valuesIntensity),
+  Option(0, "Auto pwr-off", 2, valuesBool),
+  Option(1, "Humidity ctrl", 2, valuesBool),
+  Option(2, "Sid-Chip inside", 3, valuesIntensity),
+  Option(3, "Loop view", 1, valuesBool)
 };
 
 
-//später 11 = 5 Options + 2 Page-Tasten + 3 Tabs + 1 Back
-Hitbox hitboxes[4]; //NEEDED a second empty constructor...
+//später 12 = 5 Options + 2 Page-Tasten + 4 Tabs + 1 Back
+Hitbox hitboxes[7]; //NEEDED a second empty constructor...
 
 
 
@@ -88,6 +94,8 @@ void setup() {
     hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
   }*/
   fillHitboxesOptions();
+  //fill non-Options-Hitboxes:
+  //down at draw instruction
 
   Serial.begin(9600);
   delay(1000);
@@ -109,6 +117,11 @@ void setup() {
 
   Serial.print("Screen size: x = "); Serial.print(tft.width());
   Serial.print(", y = "); Serial.println(tft.height());
+
+  int nPages = (sizeof(options)/sizeof(Option)) / N_OPTIONS_PER_PAGE;
+  if ((sizeof(options)/sizeof(Option)) % N_OPTIONS_PER_PAGE != 0)
+    nPages++;
+  Serial.println(nPages); //TESTLINE
 
   // The Adafruit_ImageReader constructor call (above, before setup())
   // accepts an uninitialized SdFat or FatFileSystem object. This MUST
@@ -179,15 +192,42 @@ void loop() {
 }
 
 void fillHitboxesOptions() {
-  for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
-    hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
+  for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
+    byte n = (currentPage-1)*N_OPTIONS_PER_PAGE + i;
+    hitboxes[i] = Hitbox((int)options[n].x, options[n].y, options[n].w, options[n].h, &options[n]);
   }
 }
 
 void fillHitboxesNull() {
-  for (uint8_t i = 0; i < sizeof(hitboxes) / sizeof(Hitbox); i++) {
+  for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
     hitboxes[i] = Hitbox();
   }
+}
+
+void turnPage(bool isUp) {
+  int nPages = (sizeof(options)/sizeof(Option)) / N_OPTIONS_PER_PAGE;
+  if ((sizeof(options)/sizeof(Option)) % N_OPTIONS_PER_PAGE != 0)
+    nPages++;
+  if(isUp) {
+    Serial.println("go up");
+    if (currentPage+1 <= nPages) {
+      Serial.println("really");
+      currentPage++;
+      drawMenu();
+    }
+  } else {
+    Serial.println("go down");
+    if (currentPage > 1) {
+      Serial.println("really");
+      currentPage--;
+      drawMenu();
+    }
+  }
+}
+
+void drawMenu() {
+  fillHitboxesOptions();
+  Button9();
 }
 
 void popupValues2(String val1, String val2) {
@@ -301,8 +341,8 @@ void Button9() {
     cy += h + 10;
     }
   */
-  for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
-    options[i].draw();
+  for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
+    options[(currentPage-1)*N_OPTIONS_PER_PAGE + i].draw();
   }
 
   //nav right Page
@@ -312,20 +352,26 @@ void Button9() {
   h = 35;
   tft.drawRoundRect(cx, cy, w, h, 4, COL_BG);
   reader.drawBMP("/arrow_up.bmp", tft, cx+5, cy+5);
+  hitboxes[N_OPTIONS_PER_PAGE+1] = Hitbox();
+  hitboxes[N_OPTIONS_PER_PAGE+1].setPosition(cx, cy, w, h);
+  hitboxes[N_OPTIONS_PER_PAGE+1].setCallbackValue((byte)101);
   tft.drawRoundRect(cx, cy + 50 + 60, w, h, 4, COL_BG);
   reader.drawBMP("/arrow_down.bmp", tft, cx+5, cy+50+60+5);
+  hitboxes[N_OPTIONS_PER_PAGE+2] = Hitbox();
+  hitboxes[N_OPTIONS_PER_PAGE+2].setPosition(cx, cy + 50 + 60, w, h);
+  hitboxes[N_OPTIONS_PER_PAGE+2].setCallbackValue((byte)102);
   tft.setCursor(cx + 10, cy + 70 - 1);
-  tft.print("1");
+  tft.print(String(currentPage));
   cy += 5;
   tft.drawLine(cx + w - 10 - 17, cy + 70 + 15, cx + w - 17, cy + 70 + 5, COL_TXT);
   tft.setFont(&NotoSans_Regular6pt7b);
   tft.setCursor(cx + 14, cy + 70 + 20);
-  tft.print("10");
+  tft.print("2");
   tft.setFont(&NotoSans_Regular11pt7b); //reset font
 
   //Tab-Bar
   cx = 0,
-  cy = 35,
+  cy = 15,
   w = 40,
   h = 35;
   for (int i = 0; i < 4; i++) {
@@ -337,13 +383,21 @@ void Button9() {
       tft.fillRoundRect(cx, cy, w, h, 4, COL_GREEN);
     else if (i == 3)
       tft.fillRoundRect(cx, cy, w, h, 4, COL_BLUE);
+
+    //HERE HITBOXES TABS    
     cy += h + 10;
   }
-
-  
+  cy += 5,
+  w = 40,
+  h = 40;
+  tft.drawRoundRect(cx, cy, w, h, 4, COL_BG);
+  reader.drawBMP("/back.bmp", tft, cx+5, cy+5);
+  hitboxes[N_OPTIONS_PER_PAGE] = Hitbox();
+  hitboxes[N_OPTIONS_PER_PAGE].setPosition(cx, cy, w, h);
+  hitboxes[N_OPTIONS_PER_PAGE].setCallbackValue((byte)100);
 }
 
-// ----Touch----
+// _________________________Touch_______________________
 
 // passing array.length on does not work, due to it having to be a pointer
 void processTouch(TSPoint p, Hitbox *h, byte hSize) {
@@ -375,7 +429,7 @@ bool touchCheckCollision(Hitbox h, int tx, int ty) {
   return false;
   }*/
 
-// ----Tft-Screen----
+// ____________________Tft-Screen__________________
 
 void ButtonS5() {
   //tft.fillScreen(ILI9341_BLACK);
