@@ -1,3 +1,4 @@
+//https://fbe-gitlab.hs-weingarten.de/
 #include "SPI.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
@@ -66,6 +67,7 @@ Adafruit_ImageReader reader(SD); // Image-reader object, pass in SD filesys
 #include "SerialCom.h"
 #include "MenuPt.h"
 #include "Option.h"
+#include "Tab.h"
 #include "Hitbox.h"
 
 byte touchLock;
@@ -82,21 +84,27 @@ Option options[] = {
   Option(2, "Sid-Chip inside", 3, valuesIntensity),
   Option(3, "Loop view", 1, valuesBool)
 };
+Option options2[] = {
+  Option(0, "Tab2-1", 1, valuesBool),
+  Option(1, "Tab2-2", 1, valuesBool),
+  Option(2, "Tab2-3", 1, valuesIntensity),
+  Option(3, "Tab2-4", 3, valuesIntensity)
+};
+
+Tab tabs[4] = {
+  Tab(1, options, 0xDE64, sizeof(options)/sizeof(Option)),
+  Tab(2, options2, COL_RED, sizeof(options2)/sizeof(Option)),
+  Tab(3, options, COL_BLUE, sizeof(options)/sizeof(Option)),
+  Tab(4, options, COL_GREEN, sizeof(options)/sizeof(Option))
+};
 
 
-//später 12 = 5 Options + 2 Page-Tasten + 4 Tabs + 1 Back
-Hitbox hitboxes[7]; //NEEDED a second empty constructor...
+//später 11 = 4 Options + 2 Page-Tasten + 4 Tabs + 1 Back
+Hitbox hitboxes[11]; //NEEDED a second empty constructor...
 
 
 
 void setup() {
-  /*for (uint8_t i = 0; i < sizeof(options) / sizeof(Option); i++) {
-    hitboxes[i] = Hitbox((int)options[i].x, options[i].y, options[i].w, options[i].h, &options[i]);
-  }*/
-  fillHitboxesOptions();
-  //fill non-Options-Hitboxes:
-  //down at draw instruction
-
   Serial.begin(9600);
   delay(1000);
   Serial.println("ILI9341 TouchUI!");
@@ -118,10 +126,10 @@ void setup() {
   Serial.print("Screen size: x = "); Serial.print(tft.width());
   Serial.print(", y = "); Serial.println(tft.height());
 
-  int nPages = (sizeof(options)/sizeof(Option)) / N_OPTIONS_PER_PAGE;
-  if ((sizeof(options)/sizeof(Option)) % N_OPTIONS_PER_PAGE != 0)
-    nPages++;
-  Serial.println(nPages); //TESTLINE
+//  int nPages = (sizeof(options)/sizeof(Option)) / N_OPTIONS_PER_PAGE;
+//  if ((sizeof(options)/sizeof(Option)) % N_OPTIONS_PER_PAGE != 0)
+//    nPages++;
+//  Serial.println(nPages); //TESTLINE
 
   // The Adafruit_ImageReader constructor call (above, before setup())
   // accepts an uninitialized SdFat or FatFileSystem object. This MUST
@@ -136,7 +144,8 @@ void setup() {
 
   tft.setRotation(1);
   tft.fillScreen(ILI9341_BLACK);
-  Button9();
+
+  drawMenu();
 }
 
 void loop() {
@@ -194,39 +203,52 @@ void loop() {
 void fillHitboxesOptions() {
   for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
     byte n = (currentPage-1)*N_OPTIONS_PER_PAGE + i;
-    hitboxes[i] = Hitbox((int)options[n].x, options[n].y, options[n].w, options[n].h, &options[n]);
+    hitboxes[i] = Hitbox(tabs[currentTab-1].opts[n].x, tabs[currentTab-1].opts[n].y, tabs[currentTab-1].opts[n].w, tabs[currentTab-1].opts[n].h, &tabs[currentTab-1].opts[n]);
+  }
+}
+
+void fillHitboxesTabs() {
+  //from 7 to 10
+  for (uint8_t i = N_OPTIONS_PER_PAGE+2; i < sizeof(hitboxes)/sizeof(Hitbox); i++) {
+    byte n = i-7;
+    hitboxes[i] = Hitbox(tabs[n].x, tabs[n].y, tabs[n].w, tabs[n].h, &tabs[n]);
   }
 }
 
 void fillHitboxesNull() {
-  for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
+  for (uint8_t i = 0; i < sizeof(hitboxes)/sizeof(Hitbox); i++) {
+    // Exception for Back-Button:
+    if (i==N_OPTIONS_PER_PAGE)
+      continue;
     hitboxes[i] = Hitbox();
   }
 }
 
 void turnPage(bool isUp) {
-  int nPages = (sizeof(options)/sizeof(Option)) / N_OPTIONS_PER_PAGE;
-  if ((sizeof(options)/sizeof(Option)) % N_OPTIONS_PER_PAGE != 0)
+  int nPages = (tabs[currentTab-1].nOpts) / N_OPTIONS_PER_PAGE;
+  if ((tabs[currentTab-1].nOpts) % N_OPTIONS_PER_PAGE != 0)
     nPages++;
   if(isUp) {
-    Serial.println("go up");
     if (currentPage+1 <= nPages) {
-      Serial.println("really");
       currentPage++;
       drawMenu();
     }
   } else {
-    Serial.println("go down");
     if (currentPage > 1) {
-      Serial.println("really");
       currentPage--;
       drawMenu();
     }
   }
 }
 
+void switchTab(byte toTab) {
+  currentTab = toTab;
+  drawMenu();
+}
+
 void drawMenu() {
   fillHitboxesOptions();
+  fillHitboxesTabs();
   Button9();
 }
 
@@ -293,6 +315,7 @@ void popupValues3(String val1, String val2, String val3) {
 
 void Button9() {
   tft.fillScreen(ILI9341_BLACK);
+  // Draw Title
   int         cx = 50,
               cy = 5,
               w = 220,
@@ -303,49 +326,13 @@ void Button9() {
   tft.drawLine(cx, cy + h, cx + w + 45, cy + h, COL_BG);
   tft.setCursor(cx + 10, cy + 26);
   tft.println("Toller Titel");
-  /*
-    for (int i = 0; i < 5; i++) {
-    if (i == 0) {
-      //tft.drawRoundRect(cx, cy, w+45, h, 4, COL_BG);
-
-      cy += h + 10;
-      continue;
-    }
-
-    tft.fillRoundRect(cx, cy, w, h, 4, COL_BG);
-
-    tft.setCursor(cx + 10, cy + 26);
-    if (i == 0)
-      tft.println("AF-Lock");
-    else if (i == 1)
-      tft.println("Cool Feature");
-    else if (i == 2)
-      tft.println("L-Sensitivity");
-    else if (i == 3)
-      tft.println("Mag-Sensitivity");
-    else if (i == 4)
-      tft.println("Auto pwr-off");
-
-    tft.setCursor(cx + w - 10 - (20 * 2), cy + 26);
-    if (i == 0)
-      tft.print("ON");
-    else if (i == 1)
-      tft.print("ON");
-    else if (i == 2)
-      tft.print("1");
-    else if (i == 3)
-      tft.print("3");
-    else if (i == 4)
-      tft.print("OFF");
-
-    cy += h + 10;
-    }
-  */
+  
+  // Draw Options
   for (uint8_t i = 0; i < N_OPTIONS_PER_PAGE; i++) {
-    options[(currentPage-1)*N_OPTIONS_PER_PAGE + i].draw();
+    tabs[currentTab-1].opts[(currentPage-1)*N_OPTIONS_PER_PAGE + i].draw();
   }
-
-  //nav right Page
+  
+  // Navigation Page right side
   cx = cx + w + 10,
   cy = 70,
   w = 35,
@@ -369,26 +356,32 @@ void Button9() {
   tft.print("2");
   tft.setFont(&NotoSans_Regular11pt7b); //reset font
 
-  //Tab-Bar
-  cx = 0,
-  cy = 15,
-  w = 40,
-  h = 35;
-  for (int i = 0; i < 4; i++) {
-    if (i == 0)
-      tft.fillRoundRect(cx, cy, w, h, 4, COL_YELLOW);
-    else if (i == 1)
-      tft.fillRoundRect(cx, cy, w, h, 4, COL_RED);
-    else if (i == 2)
-      tft.fillRoundRect(cx, cy, w, h, 4, COL_GREEN);
-    else if (i == 3)
-      tft.fillRoundRect(cx, cy, w, h, 4, COL_BLUE);
-
-    //HERE HITBOXES TABS    
-    cy += h + 10;
+  // Navigation left side Tab-Bar
+//  cx = 0,
+//  cy = 15,
+//  w = 40,
+//  h = 35;
+//  for (int i = 0; i < 4; i++) {
+//    if (i == 0)
+//      tft.fillRoundRect(cx, cy, w, h, 4, COL_YELLOW);
+//    else if (i == 1)
+//      tft.fillRoundRect(cx, cy, w, h, 4, COL_RED);
+//    else if (i == 2)
+//      tft.fillRoundRect(cx, cy, w, h, 4, COL_GREEN);
+//    else if (i == 3)
+//      tft.fillRoundRect(cx, cy, w, h, 4, COL_BLUE);
+//
+//    //HERE HITBOXES TABS    
+//    cy += h + 10;
+//  }
+  for(int i=0; i<sizeof(tabs)/sizeof(Tab); i++){
+    tabs[i].draw();
   }
-  cy += 5,
-  w = 40,
+  
+  // Back-Button
+  cx = 0;
+  cy = 200;
+  w = 40;
   h = 40;
   tft.drawRoundRect(cx, cy, w, h, 4, COL_BG);
   reader.drawBMP("/back.bmp", tft, cx+5, cy+5);
@@ -419,15 +412,6 @@ bool touchCheckCollision(Hitbox h, int tx, int ty) {
   }
   return false;
 }
-
-/*bool touchCheckCollision(int bx, int by, int bw, int bh, int tx, int ty) {
-  if (bx <= tx && tx <= bx + bw) {
-    if (by <= ty && ty <= by + bh) {
-      return true;
-    }
-  }
-  return false;
-  }*/
 
 // ____________________Tft-Screen__________________
 
